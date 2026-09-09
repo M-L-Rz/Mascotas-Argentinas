@@ -1,19 +1,27 @@
+import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+function supabaseUrl(): string | undefined {
+  return process.env.SUPABASE_URL;
+}
+
+/** Solo servidor. No uses NEXT_PUBLIC_ para estas claves: irían al navegador. */
 export function getSupabase(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = supabaseUrl();
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
 
-  if (!url || !key) {
-    return null;
-  }
-
+  if (!url || !key) return null;
   return createClient(url, key);
 }
 
-export function isSupabaseConfigured(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
+/** Inserts de newsletter/contacto. Nunca importes esto en un componente cliente. */
+export function getSupabaseAdmin(): SupabaseClient | null {
+  const url = supabaseUrl();
+  const key = process.env.SUPABASE_SECRET_KEY;
+
+  if (!url || !key) return null;
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }
+

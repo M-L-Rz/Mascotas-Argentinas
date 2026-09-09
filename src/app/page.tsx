@@ -1,8 +1,20 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArticleCard, CuriousCard } from "@/components/article/ArticleCard";
 import { NewsletterForm } from "@/components/layout/NewsletterForm";
-import { getHomeData, hrefFor } from "@/lib/content/articles";
+import { getHomeData } from "@/lib/content/articles";
+import { hrefFor } from "@/lib/content/paths";
+import { HOME_TITLE, pageMetadata } from "@/lib/seo/metadata";
+import { SITE_TAGLINE } from "@/lib/seo/site";
+
+export const revalidate = 60;
+
+export const metadata: Metadata = pageMetadata({
+  title: { absolute: HOME_TITLE },
+  description: SITE_TAGLINE,
+  path: "/",
+});
 
 export default async function HomePage() {
   const { featured, noticias, curiosos, guia } = await getHomeData();
@@ -46,9 +58,10 @@ export default async function HomePage() {
             >
               <Image
                 src={featured.cover}
-                alt=""
+                alt={featured.title}
                 width={900}
                 height={520}
+                sizes="(max-width: 768px) 100vw, 560px"
                 className="h-[280px] w-full object-cover"
                 priority
               />
@@ -108,9 +121,10 @@ export default async function HomePage() {
             <article className="grid overflow-hidden rounded-[22px] border border-line bg-white md:grid-cols-[280px_1fr]">
               <Image
                 src={guia.cover}
-                alt=""
+                alt={guia.title}
                 width={560}
                 height={360}
+                sizes="(max-width: 768px) 100vw, 280px"
                 className="h-full min-h-[180px] w-full object-cover"
               />
               <div className="flex flex-col gap-2 px-4 py-4">
@@ -157,6 +171,7 @@ export default async function HomePage() {
               alt=""
               width={800}
               height={520}
+              sizes="(max-width: 768px) 100vw, 40vw"
               className="min-h-[260px] h-full w-full object-cover"
             />
           </div>

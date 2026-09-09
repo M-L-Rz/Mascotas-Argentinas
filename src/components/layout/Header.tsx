@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { MAIL_HELLO } from "@/lib/seo/site";
 
 const links = [
   { href: "/noticias", label: "Noticias" },
@@ -114,6 +115,9 @@ export function Footer() {
           <Link className="mt-1.5 block text-[#c5e4f2]" href="/contacto">
             Contacto
           </Link>
+          <a className="mt-1.5 block text-[#c5e4f2]" href={`mailto:${MAIL_HELLO}`}>
+            {MAIL_HELLO}
+          </a>
           <Link className="mt-1.5 block text-[#c5e4f2]" href="/legal">
             Uso de marca y privacidad
           </Link>

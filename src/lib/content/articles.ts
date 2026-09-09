@@ -1,12 +1,15 @@
-import { localArticles } from "@/lib/content/local-articles";
+import { loadLocalArticles } from "@/lib/content/load-local";
 import { getSupabase } from "@/lib/supabase/client";
 import type { Article, ArticleKind } from "@/types/article";
+
+export { hrefFor } from "@/lib/content/paths";
 
 type ArticleRow = {
   slug: string;
   kind: ArticleKind;
   title: string;
   excerpt: string;
+  body: string | null;
   category: string;
   cover_url: string | null;
   published_at: string;
@@ -15,12 +18,13 @@ type ArticleRow = {
   location: string | null;
 };
 
-function fromRow(row: ArticleRow): Article {
+function fromRow(row: ArticleRow, localBody?: string): Article {
   return {
     slug: row.slug,
     kind: row.kind,
     title: row.title,
     excerpt: row.excerpt,
+    body: row.body?.trim() || localBody || "",
     category: row.category,
     cover: row.cover_url ?? "/images/perro-vereda.png",
     publishedAt: row.published_at,
@@ -30,16 +34,17 @@ function fromRow(row: ArticleRow): Article {
   };
 }
 
-async function fromSupabase(): Promise<Article[] | null> {
+async function fromSupabase(local: Article[]): Promise<Article[] | null> {
   const supabase = getSupabase();
   if (!supabase) return null;
 
   const { data, error } = await supabase
     .from("articles")
     .select(
-      "slug, kind, title, excerpt, category, cover_url, published_at, reading_minutes, featured, location",
+      "slug, kind, title, excerpt, body, category, cover_url, published_at, reading_minutes, featured, location",
     )
     .not("published_at", "is", null)
+    .lte("published_at", new Date().toISOString())
     .order("published_at", { ascending: false });
 
   if (error || !data) {
@@ -47,13 +52,19 @@ async function fromSupabase(): Promise<Article[] | null> {
     return null;
   }
 
-  return (data as ArticleRow[]).map(fromRow);
+  if (data.length === 0) return null;
+
+  const localBySlug = new Map(local.map((article) => [article.slug, article]));
+  return (data as ArticleRow[]).map((row) =>
+    fromRow(row, localBySlug.get(row.slug)?.body),
+  );
 }
 
 export async function getArticles(): Promise<Article[]> {
-  const remote = await fromSupabase();
+  const local = loadLocalArticles();
+  const remote = await fromSupabase(local);
   if (remote && remote.length > 0) return remote;
-  return localArticles;
+  return local;
 }
 
 export async function getHomeData() {
@@ -78,10 +89,4 @@ export async function getArticlesByKind(kind: ArticleKind): Promise<Article[]> {
 export async function getArticleBySlug(slug: string): Promise<Article | undefined> {
   const articles = await getArticles();
   return articles.find((article) => article.slug === slug);
-}
-
-export function hrefFor(article: Article): string {
-  if (article.kind === "noticia") return `/noticias/${article.slug}`;
-  if (article.kind === "curioso") return `/curiosos/${article.slug}`;
-  return `/guia/${article.slug}`;
 }

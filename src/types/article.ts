@@ -5,6 +5,7 @@ export type Article = {
   kind: ArticleKind;
   title: string;
   excerpt: string;
+  body: string;
   category: string;
   cover: string;
   publishedAt: string;

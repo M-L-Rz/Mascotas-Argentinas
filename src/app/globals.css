@@ -13,3 +13,8 @@ body {
 section {
   scroll-margin-top: 5.5rem;
 }
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

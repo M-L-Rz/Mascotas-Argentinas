@@ -1,23 +1,51 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase/client";
+import {
+  allowRequest,
+  asString,
+  clientIp,
+  isTrustedOrigin,
+  isValidEmail,
+  readJsonBody,
+} from "@/lib/security/http";
+import { getSupabaseAdmin } from "@/lib/supabase/client";
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as { email?: string };
-  const email = body.email?.trim().toLowerCase();
+  if (!isTrustedOrigin(request) || !allowRequest(`nl:${clientIp(request)}`)) {
+    return NextResponse.json(
+      { ok: false, message: "No pudimos anotar el correo. Probá más tarde." },
+      { status: 429 },
+    );
+  }
 
-  if (!email || !email.includes("@")) {
+  const body = await readJsonBody<{ email?: unknown; company?: unknown }>(request);
+  if (!body || (body.company !== undefined && asString(body.company) === undefined)) {
     return NextResponse.json(
       { ok: false, message: "Necesitamos un correo válido." },
       { status: 400 },
     );
   }
 
-  const supabase = getSupabase();
-  if (!supabase) {
+  if (asString(body.company)?.trim()) {
     return NextResponse.json({
       ok: true,
-      message: "Listo. Cuando conectemos Supabase, este correo queda guardado de verdad.",
+      message: "Listo. Te escribimos cuando haya algo que valga leer.",
     });
+  }
+
+  const email = asString(body.email)?.trim().toLowerCase() ?? "";
+  if (!isValidEmail(email)) {
+    return NextResponse.json(
+      { ok: false, message: "Necesitamos un correo válido." },
+      { status: 400 },
+    );
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return NextResponse.json(
+      { ok: false, message: "El newsletter todavía no está conectado." },
+      { status: 503 },
+    );
   }
 
   const { error } = await supabase.from("newsletter_subscribers").insert({ email });

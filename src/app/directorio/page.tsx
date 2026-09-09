@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Directorio",
-};
+  description:
+    "El directorio de veterinarias de Mascotas Argentinas se publica cuando haya fichas reales en el AMBA.",
+  path: "/directorio",
+  robots: { index: false, follow: true },
+});
 
 export default function DirectorioPage() {
   return (
